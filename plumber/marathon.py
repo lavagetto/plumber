@@ -15,10 +15,9 @@ class MarathonController(object):
         return [el['id'] for el in resp.json()['apps']]
 
     def deploy(self, app, registry):
-        name = "/tool-{}".format(app)
-        image = "{}{}:latest".format(registry, name)
+        image = "{}/{}".format(registry, app)
         payload  = {
-            "id": name,
+            "id": app,
             "container": {
                 "docker": {
                     "network": "BRIDGE",
@@ -36,12 +35,12 @@ class MarathonController(object):
             "cpus": 0.8,
             "mem": 1024
         }
-        if name in self.apps:
-            resp = requests.put(self.marathon_base + name, data=json.dumps(payload), auth=self.auth_data)
+        if app in self.apps:
+            resp = requests.put(self.marathon_base + '/' + name, data=json.dumps(payload), auth=self.auth_data)
         else:
             resp = requests.post(self.marathon_base, data=json.dumps(payload), auth=self.auth_data)
         return resp.json()
 
     def undeploy(self, app, registry):
-        name = "/tool-{}".format(app)
+        name = "/{}".format(app)
         return requests.delete(self.marathon_base + name, auth = self.auth_data)
