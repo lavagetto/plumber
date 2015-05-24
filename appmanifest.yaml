@@ -1,0 +1,10 @@
+name: helloworld
+type: python
+desired_instances: 1
+python:
+  wsgi_runnable: "helloworld.main:app"
+external:
+  mysql: true
+  mysql_database: helloworld
+  redis: false
+  nfs: false
