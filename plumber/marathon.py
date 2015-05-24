@@ -6,14 +6,13 @@ class MarathonController(object):
     def __init__(self, marathon_base, user, pwd):
         self.marathon_base = "{}/v2/apps".format(marathon_base)
         self.auth_data = (user, pwd)
-        self._get_apps()
 
-    def _get_apps(self):
+    @property
+    def apps(self):
         resp = requests.get(self.marathon_base, auth=self.auth_data)
         if resp.status_code != 200:
             raise Exception("Could not get the list of marathon apps")
-
-        self.apps = [el['id'] for el in resp.json()['apps']]
+        return [el['id'] for el in resp.json()['apps']]
 
     def deploy(self, app, registry):
         name = "/tool-{}".format(app)
@@ -38,9 +37,9 @@ class MarathonController(object):
             "mem": 1024
         }
         if app in self.apps:
-            resp = requests.put(self.marathon_base + name, payload = payload, auth=self.auth_data)
+            resp = requests.put(self.marathon_base + name, data=json.dumps(payload), auth=self.auth_data)
         else:
-            resp = requests.post(self.marathon_base, payload = payload, auth=self.auth_data)
+            resp = requests.post(self.marathon_base, data=json.dumps(payload), auth=self.auth_data)
         return resp.json()
 
     def undeploy(self, app, registry):

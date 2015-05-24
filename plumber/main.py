@@ -12,7 +12,7 @@ SUPPORTED_PROJECT_TYPES = ['python']
 REGISTRY_URL = os.getenv('REGISTRY_URL')
 templateLoader = jinja2.FileSystemLoader( searchpath="templates/" )
 templateEnv = jinja2.Environment( loader=templateLoader )
-mc = MarathonController(os.getenv('MARATHON_MASTER_URL'), 'admin', os.getenv('MESOS_PASS'))
+mc = marathon.MarathonController(os.getenv('MARATHON_MASTER_URL'), 'admin', os.getenv('MESOS_PASS'))
 
 def parse_manifest(filename):
     with open(filename, 'rb') as fh:
@@ -29,7 +29,7 @@ def marathon_deploy(c):
     """
     Deploy to marathon
     """
-    r = mc.deploy(c['name'], REGISTRY_URL)
+    r = mc.deploy(c['name'], 'http://' + REGISTRY_URL)
 
 def clone_repo(path):
     tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.basename(path))
