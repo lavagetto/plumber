@@ -2,13 +2,16 @@ import os
 import tempfile
 import jinja2
 import shutil
+import yaml
+import requests
 from argparse import ArgumentParser
-yaml
 
 
 
 SUPPORTED_PROJECT_TYPES = ['python']
 REGISTRY_URL = os.getenv('REGISTRY_URL')
+MESOS_MASTER_HOST=os.getenv('MESOS_MASTER_HOST')
+MESOS_PASS=os.getenv('MESOS_PASS')
 templateLoader = jinja2.FileSystemLoader( searchpath="templates/" )
 templateEnv = jinja2.Environment( loader=templateLoader )
 
@@ -28,7 +31,29 @@ def marathon_deploy(c):
     """
     Deploy to marathon
     """
-    raise NotImplementedError("Waiting on Yuvi")
+    name = 'tool-' + c['name']
+    image = "{}/{}:latest".format(REGISTRY_URL, name)
+    payload  = {
+        "id": name,
+        "container": {
+            "docker": {
+                "network": "BRIDGE",
+                "image": image,
+                "portMappings":
+                [
+                    {
+                        "containerPort": 8080,
+                        "hostPort": 0,
+                        "protocol": "tcp"
+                    }
+                ]
+            }
+        },
+        "cpus": 1.5,
+        "mem": 1024
+    }
+    mesos_url = "http://{}:8080/v2/apps".format(MESOS_MASTER_HOST)
+    r = requests.post(mesos_url, payload = json.dumps(payload), auth=('admin', MESOS_PASS))
 
 def clone_repo(path):
     tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.basename(path))
@@ -52,7 +77,7 @@ def get_dockerfile(c, path):
 def docker_build_and_push(c,dir):
     os.chdir(dir)
     # Todo: validate this, and everything else
-    name = 'tool-' + c.['name']
+    name = 'tool-' + c['name']
     tag = name + ':latest'
     # Build the docker container from the Dockerfile
     res = subprocess.check_output(['docker', 'build', '-t', name, '.'])
