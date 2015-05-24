@@ -16,7 +16,7 @@ class MarathonController(object):
 
     def deploy(self, app, registry):
         name = "/tool-{}".format(app)
-        image = "{}/{}:latest".format(registry, name)
+        image = "{}{}:latest".format(registry, name)
         payload  = {
             "id": name,
             "container": {
@@ -36,7 +36,7 @@ class MarathonController(object):
             "cpus": 0.8,
             "mem": 1024
         }
-        if app in self.apps:
+        if name in self.apps:
             resp = requests.put(self.marathon_base + name, data=json.dumps(payload), auth=self.auth_data)
         else:
             resp = requests.post(self.marathon_base, data=json.dumps(payload), auth=self.auth_data)
