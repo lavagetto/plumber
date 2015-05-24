@@ -3,18 +3,16 @@ import tempfile
 import jinja2
 import shutil
 import yaml
-import requests
+from . import marathon
 from argparse import ArgumentParser
 
 
 
 SUPPORTED_PROJECT_TYPES = ['python']
 REGISTRY_URL = os.getenv('REGISTRY_URL')
-MESOS_MASTER_HOST=os.getenv('MESOS_MASTER_HOST')
-MESOS_PASS=os.getenv('MESOS_PASS')
 templateLoader = jinja2.FileSystemLoader( searchpath="templates/" )
 templateEnv = jinja2.Environment( loader=templateLoader )
-
+mc = MarathonController(os.getenv('MARATHON_MASTER_URL'), 'admin', os.getenv('MESOS_PASS'))
 
 def parse_manifest(filename):
     with open(filename, 'rb') as fh:
@@ -31,29 +29,7 @@ def marathon_deploy(c):
     """
     Deploy to marathon
     """
-    name = 'tool-' + c['name']
-    image = "{}/{}:latest".format(REGISTRY_URL, name)
-    payload  = {
-        "id": name,
-        "container": {
-            "docker": {
-                "network": "BRIDGE",
-                "image": image,
-                "portMappings":
-                [
-                    {
-                        "containerPort": 8080,
-                        "hostPort": 0,
-                        "protocol": "tcp"
-                    }
-                ]
-            }
-        },
-        "cpus": 1.5,
-        "mem": 1024
-    }
-    mesos_url = "http://{}:8080/v2/apps".format(MESOS_MASTER_HOST)
-    r = requests.post(mesos_url, payload = json.dumps(payload), auth=('admin', MESOS_PASS))
+    r = mc.deploy(c['name'], REGISTRY_URL)
 
 def clone_repo(path):
     tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.basename(path))

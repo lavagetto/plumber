@@ -8,3 +8,4 @@ ENTRYPOINT ["gunicorn", "{{ c.python.wsgi_runnable }}"]
 CMD ["-b", "0.0.0.0:8080"]
 {% if c.external.nfs %}
 VOLUME /data/project/{{ c.name }}
+{% end %}
