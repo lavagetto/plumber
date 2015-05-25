@@ -31,7 +31,7 @@ def marathon_deploy(c):
     """
     Deploy to marathon
     """
-    r = mc.deploy(c['name'], 'http://' + REGISTRY_URL)
+    r = mc.deploy(c['name'],  REGISTRY_URL)
 
 def clone_repo(path):
     tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.path.basename(path))
@@ -55,14 +55,14 @@ def get_dockerfile(c, path):
 def docker_build_and_push(c,dir):
     os.chdir(dir)
     # Todo: validate this, and everything else
-    name = 'tool-' + c['name']
+    name = c['name']
     tag = name + ':latest'
     # Build the docker container from the Dockerfile
     res = subprocess.check_output(['sudo', 'docker', 'build', '-t', name, '.'])
-    res = subrpocess.check_output(['sudo', 'docker', 'tag', tag, REGISTRY_URL + '/' + tag])
+    res = subprocess.check_output(['sudo', 'docker', 'tag', '-f', tag, REGISTRY_URL + '/' + tag])
     res = subprocess.check_output(['sudo', 'docker', 'push', REGISTRY_URL + '/' + tag])
 
-def main():
+def run():
     parser = ArgumentParser(description="Processing pipeline for building and deploying containers")
     parser.add_argument('repository_path', defalut=os.getcwd())
     args = parser.parse_args()
