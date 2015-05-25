@@ -3,6 +3,7 @@ import tempfile
 import jinja2
 import shutil
 import yaml
+import subprocess
 from . import marathon
 from argparse import ArgumentParser
 
@@ -10,7 +11,8 @@ from argparse import ArgumentParser
 
 SUPPORTED_PROJECT_TYPES = ['python']
 REGISTRY_URL = os.getenv('REGISTRY_URL')
-templateLoader = jinja2.FileSystemLoader( searchpath="templates/" )
+tpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+templateLoader = jinja2.FileSystemLoader( searchpath=tpl_dir )
 templateEnv = jinja2.Environment( loader=templateLoader )
 mc = marathon.MarathonController(os.getenv('MARATHON_MASTER_URL'), 'admin', os.getenv('MESOS_PASS'))
 
@@ -32,7 +34,7 @@ def marathon_deploy(c):
     r = mc.deploy(c['name'], 'http://' + REGISTRY_URL)
 
 def clone_repo(path):
-    tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.basename(path))
+    tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.path.basename(path))
     try:
         res = subprocess.check_output(['git', 'clone', path, tmpdir])
         return tmpdir
@@ -45,7 +47,7 @@ def get_dockerfile(c, path):
     Creates the docker file from a template that's language-specific.
     """
     dockerfile = os.path.join(path, 'Dockerfile')
-    template = templateEnv.get_template("Dockerfile.{}.tpl", c['type'])
+    template = templateEnv.get_template("Dockerfile.{}.tpl".format(c['type']))
     dockerdata = template.render(c)
     with open(dockerfile, 'w') as fh:
         fh.write(dockerdata)
@@ -56,9 +58,9 @@ def docker_build_and_push(c,dir):
     name = 'tool-' + c['name']
     tag = name + ':latest'
     # Build the docker container from the Dockerfile
-    res = subprocess.check_output(['docker', 'build', '-t', name, '.'])
-    res = subrpocess.check_output(['docker', 'tag', tag, REGISTRY_URL + '/' + tag])
-    res = subprocess.check_output(['docker', 'push', REGISTRY_URL + '/' + tag])
+    res = subprocess.check_output(['sudo', 'docker', 'build', '-t', name, '.'])
+    res = subrpocess.check_output(['sudo', 'docker', 'tag', tag, REGISTRY_URL + '/' + tag])
+    res = subprocess.check_output(['sudo', 'docker', 'push', REGISTRY_URL + '/' + tag])
 
 def main():
     parser = ArgumentParser(description="Processing pipeline for building and deploying containers")
@@ -71,7 +73,7 @@ def main():
     project_type = c['type']
     # Dockerfile template rendering here
     get_dockerfile(c, clone_dir)
-    docker_build_and_push(clone_dir)
+    docker_build_and_push(c, clone_dir)
     # TODO: we will have a central db with the max number of instances of a project we're gonna run.
     marathon_deploy(c)
     clean_checkout()
