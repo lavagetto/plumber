@@ -69,6 +69,7 @@ def run():
     clone_dir = clone_repo(args.repository_path)
     config_file = os.path.join(clone_dir, 'manifest.yaml')
     c = parse_manifest(config_file)
+    c['REGISTRY_URL'] = REGISTRY_URL
     # Dockerfile template rendering here
     get_dockerfile(c, clone_dir)
     docker_build_and_push(c, clone_dir)
