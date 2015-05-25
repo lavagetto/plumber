@@ -4,7 +4,7 @@ import jinja2
 import shutil
 import yaml
 import subprocess
-from . import marathon
+from plumber import marathon
 from argparse import ArgumentParser
 
 
@@ -64,7 +64,7 @@ def docker_build_and_push(c,dir):
 
 def run():
     parser = ArgumentParser(description="Processing pipeline for building and deploying containers")
-    parser.add_argument('repository_path', defalut=os.getcwd())
+    parser.add_argument('repository_path', default=os.getcwd())
     args = parser.parse_args()
     clone_dir = clone_repo(args.repository_path)
     config_file = os.path.join(clone_dir, 'manifest.yaml')
@@ -74,4 +74,7 @@ def run():
     docker_build_and_push(c, clone_dir)
     # TODO: we will have a central db with the max number of instances of a project we're gonna run.
     marathon_deploy(c)
-    clean_checkout()
+    clean_checkout(tmpdir)
+
+if __name__ == '__main__':
+    run()

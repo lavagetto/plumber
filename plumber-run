@@ -1,0 +1,4 @@
+#!/usr/bin/python
+from plumber import main
+
+main.run()
