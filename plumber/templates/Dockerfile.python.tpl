@@ -1,4 +1,4 @@
-FROM python_base:2015.1
+FROM {{ REGISTRY_URL }}/python_base:2015.1
 
 ADD . /srv/application/
 WORKDIR /srv/application
