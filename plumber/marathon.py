@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 class MarathonController(object):
 
@@ -14,8 +15,8 @@ class MarathonController(object):
             raise Exception("Could not get the list of marathon apps")
         return [el['id'] for el in resp.json()['apps']]
 
-    def deploy(self, app, registry):
-        image = "{}/{}".format(registry, app)
+    def deploy(self, app, registry, tag):
+        image = "{}/{}".format(registry, tag)
         payload  = {
             "id": app,
             "container": {
@@ -35,10 +36,10 @@ class MarathonController(object):
             "cpus": 0.8,
             "mem": 1024
         }
-        if app in self.apps:
-            resp = requests.put(self.marathon_base + '/' + name, data=json.dumps(payload), auth=self.auth_data)
-        else:
-            resp = requests.post(self.marathon_base, data=json.dumps(payload), auth=self.auth_data)
+        if '/' + app in self.apps:
+            self.undeploy(app, registry)
+            time.sleep(10)
+        resp = requests.post(self.marathon_base, data=json.dumps(payload), auth=self.auth_data)
         return resp.json()
 
     def undeploy(self, app, registry):

@@ -6,7 +6,7 @@ import yaml
 import subprocess
 from plumber import marathon
 from argparse import ArgumentParser
-
+import time
 
 
 SUPPORTED_PROJECT_TYPES = ['python']
@@ -27,11 +27,12 @@ def clean_checkout(path):
     """
     shutil.rmtree(path)
 
-def marathon_deploy(c):
+def marathon_deploy(name, tag):
     """
     Deploy to marathon
     """
-    r = mc.deploy(c['name'],  REGISTRY_URL)
+    r = mc.deploy(name,  REGISTRY_URL, tag)
+    print r
 
 def clone_repo(path):
     tmpdir = tempfile.mkdtemp(prefix='git_clone_' + os.path.basename(path))
@@ -56,11 +57,12 @@ def docker_build_and_push(c,dir):
     os.chdir(dir)
     # Todo: validate this, and everything else
     name = c['name']
-    tag = name + ':latest'
+    tag = name + ':' + str(int(time.time()))
     # Build the docker container from the Dockerfile
-    res = subprocess.check_output(['sudo', 'docker', 'build', '-t', name, '.'])
+    res = subprocess.check_output(['sudo', 'docker', 'build', '-t', tag, '.'])
     res = subprocess.check_output(['sudo', 'docker', 'tag', '-f', tag, REGISTRY_URL + '/' + tag])
     res = subprocess.check_output(['sudo', 'docker', 'push', REGISTRY_URL + '/' + tag])
+    return tag
 
 def run():
     parser = ArgumentParser(description="Processing pipeline for building and deploying containers")
@@ -72,10 +74,10 @@ def run():
     c['REGISTRY_URL'] = REGISTRY_URL
     # Dockerfile template rendering here
     get_dockerfile(c, clone_dir)
-    docker_build_and_push(c, clone_dir)
+    tag = docker_build_and_push(c, clone_dir)
     # TODO: we will have a central db with the max number of instances of a project we're gonna run.
-    marathon_deploy(c)
-    clean_checkout(tmpdir)
+    marathon_deploy(c['name'], tag)
+    #clean_checkout(clone_dir)
 
 if __name__ == '__main__':
     run()
